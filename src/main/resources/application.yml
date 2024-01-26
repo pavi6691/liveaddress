@@ -4,7 +4,7 @@ server:
 spring:
   data:
     elasticsearch:
-      cluster-nodes: 54.198.207.55:9200
+      cluster-nodes: 174.129.186.4:9200
       repositories:
         enabled: true
   jpa:

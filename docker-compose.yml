@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  live-address:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    networks:
+      - liveaddress-network
+#    depends_on:
+#      - elasticsearch
+#      - mysql
+    environment:
+      - JAVA_OPTS=  # You can set additional JVM options here if needed
+
+#  # MySql
+#  mysql:
+#    container_name: mysql-db
+#    image: mysql:latest
+#    restart: always
+#    environment:
+#      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_DATABASE: mydatabase
+#      MYSQL_USER: springuser
+#      MYSQL_PASSWORD: ThePassword
+#    ports:
+#      - "3306:3306"
+#    volumes:
+#      - mysql_data:/var/lib/mysql
+#    networks:
+#      - liveaddress-network
+#
+#  # Elasticsearch
+#  elasticsearch:
+#    container_name: elasticsearch
+#    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0-arm64
+#    environment:
+#      - xpack.security.enabled=false
+#      - discovery.type=single-node
+#    networks:
+#      - liveaddress-network
+#    ports:
+#      - 9200:9200
+#
+#  # Kibana
+#  kibana:
+#    container_name: kibana
+#    image: docker.elastic.co/kibana/kibana:8.12.0-arm64
+#    environment:
+#      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+#    networks:
+#      - liveaddress-network
+#    depends_on:
+#      - elasticsearch
+#    ports:
+#      - 5601:5601
+
+networks:
+  liveaddress-network:
+    driver: bridge
+
+#volumes:
+#  mysql_data:

@@ -1,0 +1,26 @@
+server:
+  port: 8001
+  
+spring:
+  data:
+    elasticsearch:
+      cluster-nodes: 54.198.207.55:9200
+      repositories:
+        enabled: true
+  jpa:
+    properties.hibernate.dialect: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:mysql://ls-93ca5dbeca5fcc6e60c25398fd5cc1bb12295ef6.chcwss4mi5dz.us-east-1.rds.amazonaws.com:3306/acme
+    username: dbmasteruser
+    password: sc8zq9)0*>OV_Fnw-y2L6x&uG(%D)r+W
+    driver-class-name: com.mysql.cj.jdbc.Driver
+indexName: live_addresses_imported # this will be the MySql table name and same will be index name on elasticsearch
+migrate:
+  batchSize:
+    read: 1000000 # number of entries to read from sql in single request
+    write: 10000 # number of entries to write to elasticsearch in single batch request
+  schedule:
+    millis: 60000 # If data needs to synchronized from mysql to elasticsearch. this is cron job schedule for the same. it's in millis
+service.thread.pool.size: 8

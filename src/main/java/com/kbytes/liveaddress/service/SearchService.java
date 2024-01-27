@@ -21,18 +21,24 @@ public class SearchService extends Object {
         if (userInput.length() < 3) {
             return List.of(); // Return an empty list for input less than 3 characters
         }
-        Query query = null;
+        Query mainQuery = null;
         if(isPostcode(userInput)) {
-            query = new MatchPhrasePrefixQuery.Builder()
+            mainQuery = new MatchPhrasePrefixQuery.Builder()
                     .query(userInput)
                     .field("postcode").build()._toQuery();
         } else {
-            query = new MatchPhraseQuery.Builder()
+            BoolQuery.Builder boolQueryBuilder = new BoolQuery.Builder();
+            Query prefix = new MatchPhrasePrefixQuery.Builder()
+                    .query(userInput)
+                    .boost(1F)
+                    .field("fulladdress").build()._toQuery();
+            Query matchQuery = new MatchQuery.Builder()
                     .query(userInput)
                     .field("fulladdress").build()._toQuery();
+            mainQuery = boolQueryBuilder.should(List.of(prefix,matchQuery)).build()._toQuery();
         }
         NativeQuery searchQuery = NativeQuery.builder()
-                .withQuery(query)
+                .withQuery(mainQuery)
                 .build();
 
         return elasticsearchOperations.search(searchQuery, ESLiveAddress.class).stream()

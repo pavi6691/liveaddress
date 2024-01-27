@@ -54,18 +54,25 @@ public class MigrateService {
     public String migrate() {
         try {
             AtomicLong id = new AtomicLong(0);
-            try {id.set(esLiveAddressRepo.findTopByOrderByIdDesc().getId());} catch (Exception e) {}
+            AtomicLong dupId = new AtomicLong(0);
             List<PGLiveAddress> entriesFromDb = null;
+            try {id.set(esLiveAddressRepo.findTopByOrderByIdDesc().getId());} catch (Exception e) {}
             if(duplicate == 0) {
                 entriesFromDb = findFirstNByIdGreaterThan(id.get(),batchSizeRead);
             } else {
-                entriesFromDb = findFirstN(duplicate);
+                if(duplicate > batchSizeRead) {
+                    entriesFromDb = findFirstN(batchSizeRead);
+                    duplicate = duplicate - batchSizeRead;
+                } else {
+                    entriesFromDb = findFirstN(duplicate);
+                }
             }
             long totalMigrated = 0;
             while (entriesFromDb.size() > 0) {
                 List<ESLiveAddress> elasticsearch = new ArrayList<>();
                 entriesFromDb.stream().map(a -> {
                     id.getAndIncrement();
+                    dupId.getAndIncrement();
                     ESLiveAddress liveAddress = new ESLiveAddress();
                     liveAddress.setId(id.get());
                     liveAddress.setIata(a.getIata());
@@ -96,10 +103,22 @@ public class MigrateService {
                     elasticsearchOperations.bulkIndex(batch, ESLiveAddress.class);
                 }
                 totalMigrated = totalMigrated + indexQueries.size();
-                if(duplicate > 0 || entriesFromDb.size() < batchSizeRead) {
+                if(entriesFromDb.size() < batchSizeRead) {
                     break;
                 }
-                entriesFromDb = findFirstNByIdGreaterThan(id.get(),batchSizeRead);
+                if (duplicate > 0) {
+                    if(duplicate > batchSizeRead) {
+                        entriesFromDb = findFirstNByIdGreaterThan(dupId.get(),batchSizeRead);
+                        duplicate = duplicate - batchSizeRead;
+                    } else {
+                        entriesFromDb = findFirstNByIdGreaterThan(dupId.get(),duplicate);
+                    }
+                } else {
+                    entriesFromDb = findFirstNByIdGreaterThan(id.get(),batchSizeRead);
+                }
+            }
+            if(totalMigrated == 0) {
+                return String.format("No new entries found. Total entries = %d",id.get());
             }
             return String.format("Successfully migrated entries = %d. Total = %d", totalMigrated, id.get());
         } catch (Exception e) {

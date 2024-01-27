@@ -19,6 +19,7 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+//@Setting(settingPath = "/settings/settings.json")
 public class ESLiveAddress {
     
     @Id

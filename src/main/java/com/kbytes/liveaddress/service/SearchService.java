@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service("SearchService")
-public class SearchService {
+public class SearchService extends Object {
     @Autowired
     private ElasticsearchOperations elasticsearchOperations;
 
@@ -23,11 +23,11 @@ public class SearchService {
         }
         Query query = null;
         if(isPostcode(userInput)) {
-            query = new MatchBoolPrefixQuery.Builder()
+            query = new MatchPhrasePrefixQuery.Builder()
                     .query(userInput)
                     .field("postcode").build()._toQuery();
         } else {
-            query = new MatchQuery.Builder()
+            query = new MatchPhraseQuery.Builder()
                     .query(userInput)
                     .field("fulladdress").build()._toQuery();
         }

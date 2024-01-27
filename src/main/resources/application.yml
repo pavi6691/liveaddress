@@ -19,7 +19,7 @@ spring:
 indexName: live_addresses_imported # this will be the MySql table name and same will be index name on elasticsearch
 migrate:
   batchSize:
-    read: 1000000 # number of entries to read from sql in single request
+    read: 100000 # number of entries to read from sql in single request
     write: 10000 # number of entries to write to elasticsearch in single batch request
   schedule:
     millis: 60000 # If data needs to synchronized from mysql to elasticsearch. this is cron job schedule for the same. it's in millis

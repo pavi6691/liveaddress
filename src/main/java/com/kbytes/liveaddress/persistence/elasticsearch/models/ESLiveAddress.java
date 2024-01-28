@@ -12,14 +12,13 @@ import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document(indexName = "#{@indexName}", createIndex = false,
-        writeTypeHint = WriteTypeHint.FALSE)
+@Document(indexName = "#{@indexName}", createIndex = false, writeTypeHint = WriteTypeHint.FALSE)
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-//@Setting(settingPath = "/settings/settings.json")
+@Setting(settingPath = "/settings/settings.json")
 public class ESLiveAddress {
     
     @Id
@@ -33,7 +32,7 @@ public class ESLiveAddress {
     @JsonInclude
     private String postcode;
     @JsonInclude
-    @Field(type = FieldType.Search_As_You_Type)
+    @Field(type = FieldType.Search_As_You_Type, analyzer = "edge_ngram_analyzer")
     private String fulladdress;
     @Field(type = FieldType.Text)
     @JsonIgnore

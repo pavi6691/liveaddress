@@ -1,4 +1,4 @@
-package com.kbytes.liveaddress.persistence.postgresql.models;
+package com.kbytes.liveaddress.persistence.sqldb.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
@@ -14,7 +14,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class PGLiveAddress {
+public class LiveAddress {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

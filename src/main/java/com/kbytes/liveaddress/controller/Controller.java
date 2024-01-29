@@ -1,7 +1,9 @@
 package com.kbytes.liveaddress.controller;
 
 import com.kbytes.liveaddress.persistence.elasticsearch.models.ESLiveAddress;
+import com.kbytes.liveaddress.persistence.sqldb.models.RateLimit;
 import com.kbytes.liveaddress.service.MigrateService;
+import com.kbytes.liveaddress.service.RateLimitService;
 import com.kbytes.liveaddress.service.SearchService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,12 @@ public class Controller {
     
     @Autowired
     private SearchService searchService;
+    
+    @Autowired
+    private RateLimitService rateLimitService;
 
     @GetMapping("/search")
     public ResponseEntity<List<ESLiveAddress>> searchAsYouType(@RequestParam String input, HttpServletRequest request) {
-        String clientIp = getClientIpAddress(request);
         List<ESLiveAddress> results = searchService.searchAsYouType(input);
         return ResponseEntity.ok(results);
     }
@@ -34,6 +38,11 @@ public class Controller {
     @GetMapping("/sync")
     public ResponseEntity<String> migrate() {
         return ResponseEntity.ok(migrateService.migrate());
+    }
+
+    @PostMapping("/ratelimit/{clientId}/{rateLimit}")
+    public ResponseEntity<RateLimit> rateLimit(@PathVariable String clientId, @PathVariable int rateLimit) {
+        return ResponseEntity.ok(rateLimitService.update(clientId,rateLimit));
     }
 
     private String getClientIpAddress(HttpServletRequest request) {

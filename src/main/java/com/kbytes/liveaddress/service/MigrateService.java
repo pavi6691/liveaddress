@@ -1,8 +1,8 @@
 package com.kbytes.liveaddress.service;
 import com.kbytes.liveaddress.persistence.elasticsearch.models.ESLiveAddress;
 import com.kbytes.liveaddress.persistence.elasticsearch.repositories.ESLiveAddressRepo;
-import com.kbytes.liveaddress.persistence.postgresql.models.PGLiveAddress;
-import com.kbytes.liveaddress.persistence.postgresql.repositories.PGLiveAddressRepo;
+import com.kbytes.liveaddress.persistence.sqldb.models.LiveAddress;
+import com.kbytes.liveaddress.persistence.sqldb.repositories.LiveAddressRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 public class MigrateService {
     
     @Autowired
-    PGLiveAddressRepo pgLiveAddressRepo;
+    LiveAddressRepo liveAddressRepo;
     
     @Autowired
     ElasticsearchOperations elasticsearchOperations;
@@ -50,12 +49,12 @@ public class MigrateService {
      * Also it does duplicate number of entries when requested by API
      * @return Deatails with how many new entries are migrated and total entries present on elasticsearch
      */
-//    @Scheduled(initialDelay = 10000, fixedRateString = "#{@migrate_cron_schedule_millis}")
+//    @Scheduled(initialDelay = 10000, fixedRateString = "#{@migrate_cron_millis}")
     public String migrate() {
         try {
             AtomicLong id = new AtomicLong(0);
             AtomicLong dupId = new AtomicLong(0);
-            List<PGLiveAddress> entriesFromDb = null;
+            List<LiveAddress> entriesFromDb = null;
             try {id.set(esLiveAddressRepo.findTopByOrderByIdDesc().getId());} catch (Exception e) {}
             if(duplicate == 0) {
                 entriesFromDb = findFirstNByIdGreaterThan(id.get(),batchSizeRead);
@@ -128,17 +127,17 @@ public class MigrateService {
         }
     }
 
-    public List<PGLiveAddress> findFirstNByIdGreaterThan(Long id,int limit) {
+    public List<LiveAddress> findFirstNByIdGreaterThan(Long id, int limit) {
         String sql = "SELECT * FROM " + indexName + " WHERE id > :id LIMIT :limit";
-        Query query = entityManager.createNativeQuery(sql, PGLiveAddress.class);
+        Query query = entityManager.createNativeQuery(sql, LiveAddress.class);
         query.setParameter("id", id);
         query.setParameter("limit", limit);
         return query.getResultList();
     }
 
-    List<PGLiveAddress> findFirstN(int limit) {
+    List<LiveAddress> findFirstN(int limit) {
         String sql = "SELECT * FROM " + indexName + " LIMIT :limit";
-        Query query = entityManager.createNativeQuery(sql, PGLiveAddress.class);
+        Query query = entityManager.createNativeQuery(sql, LiveAddress.class);
         query.setParameter("limit", limit);
         return query.getResultList();
     }

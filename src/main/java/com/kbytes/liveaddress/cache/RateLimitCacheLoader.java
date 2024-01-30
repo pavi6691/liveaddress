@@ -10,8 +10,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
 import java.util.Map;
 
 @Component
@@ -28,8 +27,8 @@ public class RateLimitCacheLoader {
     @PostConstruct
     public void loadRateLimitsIntoCache() {
         Cache rateLimitCache = cacheManager.getCache(Constants.RATE_LIMIT_CACHE_NAME);
-        List<RateLimit> rateLimits = rateLimitRepository.findAll();
-        rateLimits.forEach(rateLimit -> rateLimitCache.put(rateLimit.getClientId(), rateLimit));
+        Flux<RateLimit> rateLimits = rateLimitRepository.findAll();
+        rateLimits.toIterable().forEach(rateLimit -> rateLimitCache.put(rateLimit.getClientId(), rateLimit));
     }
 
     /**

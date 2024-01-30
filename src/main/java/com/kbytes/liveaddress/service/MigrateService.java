@@ -3,8 +3,6 @@ import com.kbytes.liveaddress.persistence.elasticsearch.models.ESLiveAddress;
 import com.kbytes.liveaddress.persistence.elasticsearch.repositories.ESLiveAddressRepo;
 import com.kbytes.liveaddress.persistence.sqldb.models.LiveAddress;
 import com.kbytes.liveaddress.persistence.sqldb.repositories.LiveAddressRepo;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -12,6 +10,7 @@ import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -27,9 +26,6 @@ public class MigrateService {
     
     @Autowired 
     ESLiveAddressRepo esLiveAddressRepo;
-
-    @Autowired
-    EntityManager entityManager;
     
     int duplicate = 0;
     @Value("${migrate.batchSize.write}")
@@ -54,22 +50,22 @@ public class MigrateService {
         try {
             AtomicLong id = new AtomicLong(0);
             AtomicLong dupId = new AtomicLong(0);
-            List<LiveAddress> entriesFromDb = null;
+            Iterator<LiveAddress> entriesFromDb = null;
             try {id.set(esLiveAddressRepo.findTopByOrderByIdDesc().getId());} catch (Exception e) {}
             if(duplicate == 0) {
-                entriesFromDb = findFirstNByIdGreaterThan(id.get(),batchSizeRead);
+                entriesFromDb = liveAddressRepo.findByIdGreaterThan(id.get(),batchSizeRead).toIterable().iterator();
             } else {
                 if(duplicate > batchSizeRead) {
-                    entriesFromDb = findFirstN(batchSizeRead);
+                    entriesFromDb = liveAddressRepo.findFirstN(batchSizeRead).toIterable().iterator();
                     duplicate = duplicate - batchSizeRead;
                 } else {
-                    entriesFromDb = findFirstN(duplicate);
+                    entriesFromDb = liveAddressRepo.findFirstN(duplicate).toIterable().iterator();
                 }
             }
             long totalMigrated = 0;
-            while (entriesFromDb.size() > 0) {
+            while (entriesFromDb.hasNext()) {
                 List<ESLiveAddress> elasticsearch = new ArrayList<>();
-                entriesFromDb.stream().map(a -> {
+                entriesFromDb.forEachRemaining(a -> {
                     id.getAndIncrement();
                     dupId.getAndIncrement();
                     ESLiveAddress liveAddress = new ESLiveAddress();
@@ -88,8 +84,8 @@ public class MigrateService {
                     liveAddress.setLongitude(a.getLongitude());
                     liveAddress.setPostcode(a.getPostcode());
                     liveAddress.setPost_code_id(a.getPostCodeId());
-                    return liveAddress;
-                }).forEach(la -> elasticsearch.add(la));
+                    elasticsearch.add(liveAddress);
+                });
                 List<IndexQuery> indexQueries = elasticsearch.stream()
                         .map(entity -> new IndexQueryBuilder()
                                 .withIndex(indexName)
@@ -102,18 +98,18 @@ public class MigrateService {
                     elasticsearchOperations.bulkIndex(batch, ESLiveAddress.class);
                 }
                 totalMigrated = totalMigrated + indexQueries.size();
-                if(entriesFromDb.size() < batchSizeRead) {
+                if(elasticsearch.size() < batchSizeRead) {
                     break;
                 }
                 if (duplicate > 0) {
                     if(duplicate > batchSizeRead) {
-                        entriesFromDb = findFirstNByIdGreaterThan(dupId.get(),batchSizeRead);
+                        entriesFromDb = liveAddressRepo.findByIdGreaterThan(dupId.get(),batchSizeRead).toIterable().iterator();
                         duplicate = duplicate - batchSizeRead;
                     } else {
-                        entriesFromDb = findFirstNByIdGreaterThan(dupId.get(),duplicate);
+                        entriesFromDb = liveAddressRepo.findByIdGreaterThan(dupId.get(),batchSizeRead).toIterable().iterator();
                     }
                 } else {
-                    entriesFromDb = findFirstNByIdGreaterThan(id.get(),batchSizeRead);
+                    entriesFromDb = liveAddressRepo.findByIdGreaterThan(dupId.get(),batchSizeRead).toIterable().iterator();
                 }
             }
             if(totalMigrated == 0) {
@@ -127,18 +123,18 @@ public class MigrateService {
         }
     }
 
-    public List<LiveAddress> findFirstNByIdGreaterThan(Long id, int limit) {
-        String sql = "SELECT * FROM " + indexName + " WHERE id > :id LIMIT :limit";
-        Query query = entityManager.createNativeQuery(sql, LiveAddress.class);
-        query.setParameter("id", id);
-        query.setParameter("limit", limit);
-        return query.getResultList();
-    }
-
-    List<LiveAddress> findFirstN(int limit) {
-        String sql = "SELECT * FROM " + indexName + " LIMIT :limit";
-        Query query = entityManager.createNativeQuery(sql, LiveAddress.class);
-        query.setParameter("limit", limit);
-        return query.getResultList();
-    }
+//    public List<LiveAddress> findFirstNByIdGreaterThan(Long id, int limit) {
+//        String sql = "SELECT * FROM " + indexName + " WHERE id > :id LIMIT :limit";
+//        Query query = entityManager.createNativeQuery(sql, LiveAddress.class);
+//        query.setParameter("id", id);
+//        query.setParameter("limit", limit);
+//        return query.getResultList();
+//    }
+//
+//    List<LiveAddress> findFirstN(int limit) {
+//        String sql = "SELECT * FROM " + indexName + " LIMIT :limit";
+//        Query query = entityManager.createNativeQuery(sql, LiveAddress.class);
+//        query.setParameter("limit", limit);
+//        return query.getResultList();
+//    }
 }

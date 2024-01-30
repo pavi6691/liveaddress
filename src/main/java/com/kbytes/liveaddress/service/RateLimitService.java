@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
+import reactor.core.scheduler.Schedulers;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+
 @Service
 public class RateLimitService {
     
@@ -29,7 +31,7 @@ public class RateLimitService {
         Cache cache = cacheManager.getCache(Constants.RATE_LIMIT_CACHE_NAME);
         RateLimit rateLimit = (RateLimit) cache.get(clientId).get();
         if(rateLimit == null) {
-            rateLimit = rateLimitRepository.findByClientId(clientId);
+            rateLimit = rateLimitRepository.findByClientId(clientId).subscribeOn(Schedulers.parallel()).block();
         }
         if(rateLimit == null) {
             rateLimit = new RateLimit();

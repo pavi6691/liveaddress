@@ -1,4 +1,4 @@
-# Live address search
+# Address lookup
 
 ## Steps to build and deploy application
 - Configure `application.yml` for database and elasticsearch connectioin
